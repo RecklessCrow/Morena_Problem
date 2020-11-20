@@ -10,6 +10,7 @@ def make_stream():
 
         # Random bits for beginning of stream
         for _ in range(random.randint(LOWER_BOUND, UPPER_BOUND)):
+        # for _ in range(10):
             f.write(f'{random.randint(0, 1)},')
 
         # Simple pattern appended random number of times to simulate infinity
