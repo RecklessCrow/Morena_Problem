@@ -19,6 +19,8 @@ def make_stream():
         pattern = ','.join(pattern)
         for _ in range(UPPER_BOUND // period):
             f.write(pattern + ',')
+            for _ in range(period + 8):
+                f.write(f'{random.randint(0, 1)},')
 
         # write one more time so file does not end in comma
         f.write(pattern)
