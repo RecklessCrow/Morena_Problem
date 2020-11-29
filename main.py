@@ -1,4 +1,4 @@
-import math
+import itertools
 
 import numpy as np
 from suffix_trees import STree
@@ -12,64 +12,40 @@ from stream_sim import *
 # matthew.morena@cnu.edu
 
 
-# make_stream()
+def perfect_periodicity(positions):
 
-
-def principal_period(s):
-    i = (s+s).find(s, 1, -1)
-    return None if i == -1 else s[:i]
-
-
-def perfect_periodicity(period, start_pos, n):
-    return math.floor((n - start_pos + 1) / period)
+    for i in range(len(positions) - 3):
+        if positions[i + 1] - positions[i] != positions[i + 2] - positions[i + 1]:
+            pass
 
 
 def main():
-    period_list = []
+    signal = np.genfromtxt(FILE_NAME, delimiter=',').astype(int)
+    T = ''.join(signal.astype(str))
+    n = len(T)
+    limit = n // 32
+    del signal
+    st = STree.STree(T)
 
-    for occur_vec in vectors:
-        k = len(occur_vec)
-        for j in range(n // 2):
-            # todo get pattern from vec
-            pattern = "0110"
-            period = occur_vec[j + 1] - occur_vec[j]  # candidate period
-            start_pos = occur_vec[j]
-            end_pos = occur_vec[k]
+    # iterate over all potential patterns of length 3 to the limit
+    for i in range(3, limit):
+        for pattern in map(''.join, itertools.product('01', repeat=i)):
+            periods = list(st.find_all(pattern))
+            periods.sort()
 
-            count_p = 0
-            for i in range(j, k):
-                if start_pos % period == occur_vec[i] % period:
-                    count_p += 1
+            if periods is None:
+                continue
 
-            confidence = count_p / perfect_periodicity(period, start_pos)
-            
-            if confidence > THRESHOLD:
-                period_list.append(period)
+            print(perfect_periodicity(periods))
 
-    print(period_list)
+            # if len(periods) > 1:
+            #     period_str = f'Pattern:             {pattern}\n' \
+            #                  f'Period:              {len(pattern)}\n' \
+            #                  f'Period Start:        {1}\n' \
+            #                  f'Period Increment:    {1}\n' \
+            #                  f'Number patterns:     {len(periods)}\n'
+            #     print(period_str)
 
 
 if __name__ == '__main__':
-    signal = np.genfromtxt(FILE_NAME, delimiter=',')
-    signal = signal.astype(int)
-
-    n = len(signal)
-
-    T = ''.join(signal.astype(str))
-
-    del signal
-
-    pattern = '0110'  # haha jeep
-
-    print(principal_period(T))
-
-    st = STree.STree(T)
-    periods = list(st.find_all(pattern))
-    periods.sort()
-    # print(periods)
-
-    # todo make occurrence vectors
-
-    vectors = []
-    THRESHOLD = 0.5
-    pass
+    main()
