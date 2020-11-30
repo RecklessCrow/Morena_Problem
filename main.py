@@ -1,8 +1,9 @@
 import itertools
+import os
 
 import numpy as np
 from suffix_trees import STree
-from stream_sim import *
+
 
 
 # Questions to ask
@@ -11,16 +12,19 @@ from stream_sim import *
 # * How to detect when periodicity starts and chaos ends
 # matthew.morena@cnu.edu
 
+NONPERIODIC = os.path.join('data', 'binary_sequence_nonperiodic.txt')
+PERIODIC = os.path.join('data', 'binary_sequence_nonperiodic_to_periodic.txt')
+
 
 def perfect_periodicity(positions):
 
     for i in range(len(positions) - 3):
-        if positions[i + 1] - positions[i] != positions[i + 2] - positions[i + 1]:
-            pass
+        #  todo: check if the positions of the pattern are periodic and in what range
+        pass
 
 
 def main():
-    signal = np.genfromtxt(FILE_NAME, delimiter=',').astype(int)
+    signal = np.genfromtxt(PERIODIC, delimiter='\n').astype(int)
     T = ''.join(signal.astype(str))
     n = len(T)
     limit = n // 32
@@ -36,15 +40,14 @@ def main():
             if periods is None:
                 continue
 
-            print(perfect_periodicity(periods))
-
-            # if len(periods) > 1:
-            #     period_str = f'Pattern:             {pattern}\n' \
-            #                  f'Period:              {len(pattern)}\n' \
-            #                  f'Period Start:        {1}\n' \
-            #                  f'Period Increment:    {1}\n' \
-            #                  f'Number patterns:     {len(periods)}\n'
-            #     print(period_str)
+            if len(periods) > 1:
+                period_str = f'Pattern:             {pattern}\n' \
+                             f'Number patterns:     {len(periods)}\n'
+                # f'Period Start:        {}\n' \
+                # f'Period End:          {}\n' \
+                # f'Period Increment:    {}\n' \
+                # f'Period:              {len(pattern)}\n' \
+                print(period_str)
 
 
 if __name__ == '__main__':
