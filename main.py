@@ -102,9 +102,9 @@ def main():
 
     # iterate over all potential patterns of length 3 to the limit
     for i in range(3, limit):
-        with Pool(60) as p:
-            patterns = p.map(''.join, itertools.product('01', repeat=i), chunksize=threads ** 2)
-            pattern_idxs = p.map(kmp_search, patterns, chunksize=threads ** 2)
+        with Pool(threads // 2) as p:
+            patterns = p.map(''.join, itertools.product('01', repeat=i), chunksize=250)
+            pattern_idxs = p.map(kmp_search, patterns, chunksize=250)
 
             for pat, idxs in zip(patterns, pattern_idxs):
                 if len(idxs) < 3:
