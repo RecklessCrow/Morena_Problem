@@ -8,6 +8,12 @@ import numpy as np
 NONPERIODIC = os.path.join('data', 'binary_sequence_nonperiodic.txt')
 PERIODIC = os.path.join('data', 'binary_sequence_nonperiodic_to_periodic.txt')
 
+threads = cpu_count()
+
+signal = np.genfromtxt(PERIODIC, delimiter='\n').astype(int)
+T = ''.join(signal.astype(str))
+limit = 256
+
 
 def check_periodicity(idx_list):
     def all_equal(iterable):
@@ -33,7 +39,7 @@ def check_periodicity(idx_list):
 
 # Python program for KMP Algorithm:
 # from https://www.geeksforgeeks.org/python-program-for-kmp-algorithm-for-pattern-searching-2/
-def kmp_search(pat, txt):
+def kmp_search(pat, txt=T):
     # create lps[] that will hold the longest prefix suffix
     # values for pattern
     lps = [0] * len(pat)
@@ -93,18 +99,12 @@ def compute_lps_array(pat, lps):
 
 
 def main():
-    threads = cpu_count() // 2
-
-    signal = np.genfromtxt(PERIODIC, delimiter='\n').astype(int)
-    T = ''.join(signal.astype(str))
-    limit = 256
 
     # iterate over all potential patterns of length 3 to the limit
     for i in range(3, limit):
-        with Pool(threads) as p:
-            patterns = p.map(''.join, itertools.product('01', repeat=i))
-            map_input = [(pat, T) for pat in patterns]
-            pattern_idxs = p.starmap(kmp_search, map_input)
+        with Pool(60) as p:
+            patterns = p.map(''.join, itertools.product('01', repeat=i), chunksize=threads ** 2)
+            pattern_idxs = p.map(kmp_search, patterns, chunksize=threads ** 2)
 
             for pat, idxs in zip(patterns, pattern_idxs):
                 if len(idxs) < 3:
