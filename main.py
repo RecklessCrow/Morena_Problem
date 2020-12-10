@@ -1,53 +1,117 @@
 import itertools
 import os
+from itertools import groupby
+from multiprocessing import Pool, cpu_count
 
 import numpy as np
-from suffix_trees import STree
-
-
-
-# Questions to ask
-# * Is the pattern constant or a random pattern for each stream
-# * Are we looking for perfect periodicity
-# * How to detect when periodicity starts and chaos ends
-# matthew.morena@cnu.edu
 
 NONPERIODIC = os.path.join('data', 'binary_sequence_nonperiodic.txt')
 PERIODIC = os.path.join('data', 'binary_sequence_nonperiodic_to_periodic.txt')
 
 
-def perfect_periodicity(positions):
+def check_periodicity(idx_list):
+    def all_equal(iterable):
+        """
+        from https://stackoverflow.com/questions/3844801/check-if-all-elements-in-a-list-are-identical
+        :param iterable:
+        :return:
+        """
+        g = groupby(iterable)
+        return next(g, True) and not next(g, False)
 
-    for i in range(len(positions) - 3):
-        #  todo: check if the positions of the pattern are periodic and in what range
-        pass
+    new_idx_list = idx_list
+    while len(new_idx_list) > 2:
+        pattern_distances = [new_idx_list[i + 1] - new_idx_list[i] for i in range(len(new_idx_list) - 1)]
+
+        if all_equal(pattern_distances):
+            return True, new_idx_list
+
+        new_idx_list = new_idx_list[1:]
+
+    return False, idx_list
+
+
+# Python program for KMP Algorithm:
+# from https://www.geeksforgeeks.org/python-program-for-kmp-algorithm-for-pattern-searching-2/
+def kmp_search(pat, txt):
+    # create lps[] that will hold the longest prefix suffix
+    # values for pattern
+    lps = [0] * len(pat)
+    j = 0  # index for pat[]
+
+    # Preprocess the pattern (calculate lps[] array)
+    compute_lps_array(pat, lps)
+
+    indexes = []
+    i = 0  # index for txt[]
+    while i < len(txt):
+        if pat[j] == txt[i]:
+            i += 1
+            j += 1
+
+        if j == len(pat):
+            idx = i - j
+            if len(indexes) == 0:
+                indexes.append(idx)
+            elif idx - indexes[-1] > len(pat):
+                indexes.append(idx)
+            j = lps[j - 1]
+
+            # mismatch after j matches
+        elif i < len(txt) and pat[j] != txt[i]:
+            # Do not match lps[0..lps[j-1]] characters,
+            # they will match anyway
+            if j != 0:
+                j = lps[j - 1]
+            else:
+                i += 1
+
+    return indexes
+
+
+def compute_lps_array(pat, lps):
+    longest_length = 0  # length of the previous longest prefix suffix
+    i = 1
+
+    # the loop calculates lps[i] for i = 1 to M-1
+    while i < len(pat):
+        if pat[i] == pat[longest_length]:
+            longest_length += 1
+            lps[i] = longest_length
+            i += 1
+        else:
+            # This is tricky. Consider the example.
+            # AAACAAAA and i = 7. The idea is similar
+            # to search step.
+            if longest_length != 0:
+                longest_length = lps[longest_length - 1]
+
+                # Also, note that we do not increment i here
+            else:
+                lps[i] = 0
+                i += 1
 
 
 def main():
+    threads = cpu_count() // 2
+
     signal = np.genfromtxt(PERIODIC, delimiter='\n').astype(int)
     T = ''.join(signal.astype(str))
-    n = len(T)
-    limit = n // 32
-    del signal
-    st = STree.STree(T)
+    limit = 256
 
     # iterate over all potential patterns of length 3 to the limit
     for i in range(3, limit):
-        for pattern in map(''.join, itertools.product('01', repeat=i)):
-            periods = list(st.find_all(pattern))
-            periods.sort()
+        with Pool(threads) as p:
+            patterns = p.map(''.join, itertools.product('01', repeat=i))
+            map_input = [(pat, T) for pat in patterns]
+            pattern_idxs = p.starmap(kmp_search, map_input)
 
-            if periods is None:
-                continue
-
-            if len(periods) > 1:
-                period_str = f'Pattern:             {pattern}\n' \
-                             f'Number patterns:     {len(periods)}\n'
-                # f'Period Start:        {}\n' \
-                # f'Period End:          {}\n' \
-                # f'Period Increment:    {}\n' \
-                # f'Period:              {len(pattern)}\n' \
-                print(period_str)
+            for pat, idxs in zip(patterns, pattern_idxs):
+                if len(idxs) < 3:
+                    continue
+                periodic, period_idxs = check_periodicity(idxs)
+                if periodic:
+                    print(f'{pat} : {period_idxs}')
 
 
 if __name__ == '__main__':
