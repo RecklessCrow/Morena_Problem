@@ -12,7 +12,7 @@ threads = cpu_count()
 
 signal = np.genfromtxt(PERIODIC, delimiter='\n').astype(int)
 T = ''.join(signal.astype(str))
-limit = 256
+limit = 8
 
 
 def check_periodicity(idx_list):
@@ -99,19 +99,55 @@ def compute_lps_array(pat, lps):
 
 
 def main():
+    with Pool(threads // 2) as p:
+        patterns = [p.map(''.join, itertools.product('01', repeat=i), chunksize=250) for i in range(1, limit + 1)]
 
-    # iterate over all potential patterns of length 3 to the limit
-    for i in range(3, limit):
-        with Pool(threads // 2) as p:
-            patterns = p.map(''.join, itertools.product('01', repeat=i), chunksize=250)
-            pattern_idxs = p.map(kmp_search, patterns, chunksize=250)
+        def temp(patterns, start_index=len(T)):
+            idx_lists = []
+            period_idxs = []
+            for pat in patterns:
+                idx_lists.append([idx_list
+                                  for idx_list
+                                  in p.map(kmp_search, pat, chunksize=250)])
+                period_idxs.append([(pat, idx_list)
+                                    for pat, (periodic, idx_list)
+                                    in zip(pat, p.map(check_periodicity, idx_lists[-1], chunksize=250))
+                                    if idx_list and periodic])
 
-            for pat, idxs in zip(patterns, pattern_idxs):
-                if len(idxs) < 3:
+            for i in range(len(period_idxs) - 1, -1, -1):
+
+                if not period_idxs[i]:
                     continue
-                periodic, period_idxs = check_periodicity(idxs)
-                if periodic:
-                    print(f'{pat} : {period_idxs}')
+
+                min_idx = float('inf')
+                sample = None
+                for j in range(len(period_idxs[i])):
+                    # print(period_idxs[i][j])
+                    if min(period_idxs[i][j][1]) < min_idx and min(period_idxs[i][j][1]) < start_index:
+                        sample = period_idxs[i][j]
+                return sample[0], min(sample[1])
+
+        substring, start_index = temp(patterns)
+        pattern = ''
+        while substring != pattern:
+            pattern = substring
+            print(f'Current pattern:    {pattern}\n'
+                  f'Starting index:     {start_index}')
+            new_patterns = [[bit_string + pattern] for p in patterns for bit_string in p]
+            try:
+                s, start_index = temp(new_patterns, start_index)
+                substring = s
+            except TypeError:
+                break
+
+        period_idxs = kmp_search(pattern)
+        period_idxs = check_periodicity(period_idxs)[1]
+
+        pattern = T[period_idxs[0]: period_idxs[1]]
+
+        print(f'\n'
+              f'Pattern:    {pattern}\n'
+              f'Indexes:    {period_idxs}')
 
 
 if __name__ == '__main__':
