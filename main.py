@@ -99,6 +99,8 @@ def compute_lps_array(pat, lps):
 
 
 def main():
+    from time import time
+    start = time()
     with Pool(threads // 2) as p:
         patterns = [p.map(''.join, itertools.product('01', repeat=i), chunksize=250) for i in range(1, limit + 1)]
 
@@ -131,8 +133,8 @@ def main():
         pattern = ''
         while substring != pattern:
             pattern = substring
-            print(f'Current pattern:    {pattern}\n'
-                  f'Starting index:     {start_index}')
+            # print(f'Current pattern:    {pattern}\n'
+            #       f'Starting index:     {start_index}')
             new_patterns = [[bit_string + pattern] for p in patterns for bit_string in p]
             try:
                 s, start_index = temp(new_patterns, start_index)
@@ -145,9 +147,9 @@ def main():
 
         pattern = T[period_idxs[0]: period_idxs[1]]
 
-        print(f'\n'
-              f'Pattern:    {pattern}\n'
-              f'Indexes:    {period_idxs}')
+        print(f'Pattern:    {pattern}\n'
+              f'Indexes:    {period_idxs}\n'
+              f'{time() - start:.2}s')
 
 
 if __name__ == '__main__':
