@@ -84,6 +84,9 @@ def find_pattern(string, limit, suffix='', tested=None):
 
 
 def main():
+
+    # Todo: index is off by three, find fix
+
     from time import time
 
     start = time()
