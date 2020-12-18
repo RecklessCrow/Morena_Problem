@@ -109,7 +109,7 @@ def main():
         while pat is not None and find_indexes(pat, T)[0] < start_idx:
             start_idx = find_indexes(pat, T)[0]
             old_pat = pat
-            pat = find_pattern(string=T, limit=i, suffix=pat, tested=tried)
+            pat = find_pattern(string=T, limit=1, suffix=pat, tested=tried)
             if pat is None:
                 tried.append(root_pat)
                 pat = find_pattern(T, i, tested=tried)
