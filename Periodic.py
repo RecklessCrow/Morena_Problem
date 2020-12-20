@@ -59,7 +59,7 @@ def check_periodicity(idxs, string, pat_len=None):
 
 def find_pattern(string, limit, suffix='', tested=None):
     """
-    Finds the pattern with
+    Finds the pattern with periodic indexes
     :param string:
     :param limit:
     :param suffix:
@@ -84,8 +84,6 @@ def find_pattern(string, limit, suffix='', tested=None):
 
 
 def main():
-
-    # Todo: index is off by three, find fix
 
     from time import time
 
@@ -115,6 +113,7 @@ def main():
                 pat = find_pattern(T, i, tested=tried)
                 root_pat = pat
                 start_idx = len(T)
+                break
 
         idxs = find_indexes(old_pat, T)
         pat = T[idxs[0]:idxs[1]]
